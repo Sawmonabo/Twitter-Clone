@@ -1,0 +1,14 @@
+mutation AddTweet($data: tweets_tweetsCreateInput!) {
+    tweets_createOnetweets(data: $data) 
+    {
+        id
+        displayName
+        username
+        verified
+        text
+        avatar
+        image
+        date
+    }
+}
+#

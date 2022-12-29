@@ -1,0 +1,152 @@
+Steps to create twitter clone with wg
+---------------------------------------
+Twitter INIT
+------------
+npx create-react-app twitter-clone
+git clone https://github.com/Sawmonabo/wundergraph-twitter-clone.git
+copy over the files from twitter-clone, make the files completely wg-independent
+maybe the first step of the tutorial should be to clone the repo with main being set to a twitter clone filled with dummy data, and console logging a send tweet rather than actually mutating anything
+
+WunderGraph INIT
+------------
+now we need to checkout the new branch init-wundergraph
+npx create-wundergraph-app twitter-clone -E simple
+move necessary files to root dir
+  mv twitter-clone/.wundergraph ./
+  mv twitter-clone/tsconfig.json ./
+  mv twitter-clone/.gitignore ./
+  npm i @wundergraph/sdk
+  npm i @wundergraph/swr
+  npm i graphql
+  npm i typescript --save-dev
+add these two entries to package.json
+  "wundergraph": "wunderctl up --debug",
+  "generate": "wunderctl generate up --debug",
+get rid of wg created folder
+  rm -rf twitter-clone
+update wundergraph.config.ts:38 with the following:
+  old
+				: ['http://localhost:3000', new EnvironmentVariable('WG_ALLOWED_ORIGIN')],
+  new
+				: ['http://localhost:3000'],
+update wundergraph.config.ts:27 with the following because create-react-app
+requires all files to be in src/:
+  old
+      // path: "../frontend/src/generated",
+  new
+			path: "../src/components/generated",
+
+
+MONGODB INIT
+------------
+go to mongo db site and create account (can login with google) 
+  https://account.mongodb.com/account/login?nds=true&_ga=2.53799790.754773367.1672107021-1055546340.1672107021&_gac=1.45787478.1672107021.CjwKCAiAqaWdBhAvEiwAGAQltm3pdx2laKih-31DCbQo-U6e_PJ8aizwcctAqawCcZgH9pTUSjGnVRoCKi8QAvD_BwE
+choose or create an organization, then click "New Project", give it a name, click "Create Project"
+click Add Current IP Address
+then click "Build a Database"
+choose Shared Free tier
+allow default settings for the Cluster
+click "Connect" to the cluster
+(Make sure it says that your IP Address has been added, this is very important!)
+Choose a username and password for the database, SAVE THESE
+Click next/continue, then choose "Connect using VSCode" and copy/save the connection string in the ( Connect to your MongoDB deployment ) text box
+  ex: mongodb+srv://user:<password>@cluster0.jzgqp26.mongodb.net/test
+Go to Collections on the page for your Cluster and click Add My Own Data
+Click Create and then insert a document
+  {"_id":
+    {"$oid":"63816aaad38a36c5cfddaf06"},
+    "displayName":"Test User",
+    "username":"testuser",
+    "verified":true,
+    "text":"I love Wundergraph",
+    "avatar":"https://images-ext-1.discordapp.net/external/FrhETDKgDLfwckbcNUU9Ap3gkzIIU9a6mYuFa69SXlA/https/www.shareicon.net/data/512x512/2016/09/15/829459_man_512x512.png",
+    "date":{"$date":{"$numberLong":"1671955200000"}},
+    "image":"https://avatars.githubusercontent.com/u/64281914?s=200&v=4"
+  }
+Update WG config for the new db
+  replace countries with:
+    const tweets = introspect.mongodb({
+      apiNamespace: 'tweets',
+      databaseURL: 'mongodb+srv://user:pass@cluster0.uvkwxgc.mongodb.net/TweetsCollection',
+      introspection : {
+        pollingIntervalSeconds: 5,
+      },
+    });
+  update apis array in config
+    apis: [
+      tweets
+    ],
+run `wunderctl generate`
+introspect for mongodb so that we get the generated schema and wg operations
+  (be sure to update command with the correct cluster address also)
+  wunderctl introspect mongodb
+mongodb+srv://<your-username>:<your-password>@cluster0.uvkwxgc.mongodb.net/<your-database-name>
+create schema.prisma with the following contents in the root-dir:
+  datasource db {
+    provider = "mongodb"
+    url      = "mongodb+srv://user:pass@cluster0.jzgqp26.mongodb.net/Tweets"
+  }
+
+  model Tweets {
+    id          String   @id @default(auto()) @map("_id") @db.ObjectId
+    displayName String
+    username    String
+    verified    Boolean
+    text        String
+    avatar      String?
+    image       String?
+    date        DateTime @default(now())
+  }
+
+the last thing that we need is a wundergraph.ts. This will be in
+src/lib/wundergraph.ts (lib is a new dir, you need to create it)
+  import { createClient, Operations } from '../components/generated/client';
+
+  import { createHooks } from '@wundergraph/swr';
+
+  const client = createClient() // Typesafe WunderGraph client
+
+  export const {
+    useQuery,
+    useMutation,
+    useSubscription,
+    useUser,
+    useFileUpload,
+    useAuth,
+  } = createHooks<Operations>(client)
+
+open the jsonchema.ts file in src/components/generated and look for the
+findManytweets query, that will be the one we use in our manually defined
+operation
+file should be .wundergraph/operations/GetTweets.graphql and contains:
+  query GetTweets {
+    tweets_findManytweets {
+      id
+      displayName
+      username
+      verified
+      text
+      avatar
+      image
+      date
+    }
+  }
+now that the operation is written, run a wunderctl generate again
+wunderctl generate
+now we can add the call to useQuery into Feed.js so that our feed will retrieve
+real data from the db we just created, add the following contents to the
+beginning of the function:
+  const tweets = useQuery({
+    operationName: 'GetTweets',
+    liveQuery: true,
+    requiresAuthentication: false
+  });
+then update the line that calls .map() to call it on
+tweets.data?.tweets_findManytweets? instead of posts
+  ex:       {tweets.data?.tweets_findManytweets?.map((tweet) => (
+
+wunderctl up --debug
+create an .env file in your root dir with contents:
+  GENERATE_SOURCEMAP=false
+npm start
+

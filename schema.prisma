@@ -1,0 +1,15 @@
+datasource db {
+  provider = "mongodb"
+  url      = "mongodb+srv://user:pass@cluster0.uvkwxgc.mongodb.net/TweetsCollection"
+}
+
+model Tweets {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  displayName String
+  username    String
+  verified    Boolean
+  text        String
+  avatar      String?
+  image       String?
+  date        DateTime @default(now())
+}

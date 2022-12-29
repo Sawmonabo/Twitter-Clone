@@ -1,0 +1,3 @@
+src/components/generated/*.ts
+src/components/generated/*.js
+src/lib/wundergraph.ts
