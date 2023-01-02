@@ -20,10 +20,10 @@ Post.propTypes = {
   verified: PropTypes.bool,
   text: PropTypes.string,
   image: PropTypes.string,
-  avatar: PropTypes.string
+  avatar: PropTypes.string,
+  id: PropTypes.string
 };
-
-function Post ({ displayName, username, verified, text, image, avatar }) {
+function Post ({ displayName, username, verified, text, image, avatar, id }) {
   return (
     <div className='post'>
       <div className='post__avatar'>
@@ -47,7 +47,7 @@ function Post ({ displayName, username, verified, text, image, avatar }) {
         <div className='post__footer'>
           <ChatBubble Icon={ChatBubbleOutline} />
           <Retweet Icon={Repeat} />
-          <Like Icon={FavoriteBorder} />
+          <Like Icon={FavoriteBorder} tweetID={id}/>
           <Share Icon={Publish} />
         </div>
       </div>

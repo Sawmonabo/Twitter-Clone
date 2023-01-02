@@ -7,12 +7,12 @@ Like.propTypes = {
   tweetID: PropTypes.string
 };
 
-function Like ({ Icon }) {
+function Like ({ Icon, tweetID }) {
   const [active, setActive] = useState(false);
   const handleClick = () => {
     setActive(!active);
   };
-
+  // console.log(tweetID);
   return (
     <button onClick={handleClick} className={`likeOption ${active && 'likeOption--active'}`}>
       <Icon fontSize='small'/>
