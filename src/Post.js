@@ -46,8 +46,8 @@ function Post ({ displayName, username, verified, text, image, avatar }) {
         <img src={image} alt='' />
         <div className='post__footer'>
           <ChatBubble Icon={ChatBubbleOutline} />
-          <Retweet Icon={Repeat} active={false}/>
-          <Like Icon={FavoriteBorder} active={false}/>
+          <Retweet Icon={Repeat} />
+          <Like Icon={FavoriteBorder} />
           <Share Icon={Publish} />
         </div>
       </div>
